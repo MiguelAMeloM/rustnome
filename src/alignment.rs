@@ -45,8 +45,8 @@ mod matrix {
 
 /// Module implementing the Smith-Waterman local alignment algorithm.
 pub mod smith_waterman {
-    use crate::alignment::{Alignment, Score, Scoring};
     use crate::alignment::matrix::{new_matrix, Matrix};
+    use crate::alignment::{Alignment, Score, Scoring};
 
     fn find_max(matrix: &Matrix) -> (usize, usize) {
         let (mut x, mut y) = (0, 0);
@@ -58,27 +58,22 @@ pub mod smith_waterman {
                     x = i;
                     y = j;
                 };
-            };
-        };
+            }
+        }
         (x, y)
     }
 
-    fn fill_matrix<T: Score>(
-        seq1: &Vec<T>,
-        seq2: &Vec<T>,
-        matrix: &mut Matrix,
-        scoring: Scoring,
-    ) {
+    fn fill_matrix<T: Score>(seq1: &Vec<T>, seq2: &Vec<T>, matrix: &mut Matrix, scoring: Scoring) {
         let m = seq1.len();
         let n = seq2.len();
         for i in 1..=m {
             for j in 1..=n {
                 let hor = matrix[i - 1][j] + scoring.gap;
                 let ver = matrix[i][j - 1] + scoring.gap;
-                let diag= matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], scoring);
+                let diag = matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], scoring);
                 matrix[i][j] = hor.max(ver).max(diag).max(0.0);
-            };
-        };
+            }
+        }
     }
 
     fn local_backtrack<T: Clone + Score>(
@@ -99,18 +94,40 @@ pub mod smith_waterman {
         if i > 0 && score == matrix[i - 1][j] + punctuation.gap {
             al1.push(Some(seq1[i - 1].clone()));
             al2.push(None);
-            local_backtrack(als, matrix, (al1.clone(), al2.clone()), (i - 1, j), (seq1, seq2), punctuation);
+            local_backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i - 1, j),
+                (seq1, seq2),
+                punctuation,
+            );
         };
         if j > 0 && score == matrix[i][j - 1] + punctuation.gap {
             al2.push(Some(seq2[j - 1].clone()));
             al1.push(None);
-            local_backtrack(als, matrix, (al1.clone(), al2.clone()), (i, j - 1), (seq1, seq2), punctuation);
+            local_backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i, j - 1),
+                (seq1, seq2),
+                punctuation,
+            );
         };
-        if (i > 0 && j > 0) && (matrix[i][j] == matrix[i-1][j-1] + seq1[i - 1].score(&seq2[j - 1], punctuation))
+        if (i > 0 && j > 0)
+            && (matrix[i][j] == matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], punctuation))
         {
             al1.push(Some(seq1[i - 1].clone()));
             al2.push(Some(seq2[j - 1].clone()));
-            local_backtrack(als, matrix, (al1.clone(), al2.clone()), (i - 1, j - 1), (seq1, seq2), punctuation);
+            local_backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i - 1, j - 1),
+                (seq1, seq2),
+                punctuation,
+            );
         };
     }
 
@@ -141,16 +158,23 @@ pub mod smith_waterman {
         let (i, j) = find_max(&matrix);
         let score = matrix[i][j];
         let mut als = Vec::new();
-        local_backtrack(&mut als, &matrix, (al1, al2), (i, j), (tar.as_ref(), src.as_ref()), punctuation);
+        local_backtrack(
+            &mut als,
+            &matrix,
+            (al1, al2),
+            (i, j),
+            (tar.as_ref(), src.as_ref()),
+            punctuation,
+        );
         (score, als)
     }
 }
 
 /// Module implementing the Needleman-Wunsch global alignment algorithm.
 pub mod needleman_wunsch {
+    use super::matrix::*;
     use crate::alignment::{Alignment, Score, Scoring};
     use crate::sequences::profile::Profile;
-    use super::matrix::*;
 
     fn init_matrix(matrix: &mut Matrix, gap: f64) {
         let m = matrix.len();
@@ -163,22 +187,17 @@ pub mod needleman_wunsch {
         }
     }
 
-    fn fill_matrix<T: Score>(
-        seq1: &Vec<T>,
-        seq2: &Vec<T>,
-        matrix: &mut Matrix,
-        scoring: Scoring,
-    ) {
+    fn fill_matrix<T: Score>(seq1: &Vec<T>, seq2: &Vec<T>, matrix: &mut Matrix, scoring: Scoring) {
         let m = seq1.len();
         let n = seq2.len();
         for i in 1..=m {
             for j in 1..=n {
                 let hor = matrix[i - 1][j] + scoring.gap;
                 let ver = matrix[i][j - 1] + scoring.gap;
-                let diag= matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], scoring);
+                let diag = matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], scoring);
                 matrix[i][j] = hor.max(ver).max(diag);
-            };
-        };
+            }
+        }
     }
 
     fn backtrack<T: Clone + Score>(
@@ -199,18 +218,40 @@ pub mod needleman_wunsch {
         if i > 0 && score == matrix[i - 1][j] + punctuation.gap {
             al1.push(Some(seq1[i - 1].clone()));
             al2.push(None);
-            backtrack(als, matrix, (al1.clone(), al2.clone()), (i - 1, j), (seq1, seq2), punctuation);
+            backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i - 1, j),
+                (seq1, seq2),
+                punctuation,
+            );
         };
         if j > 0 && score == matrix[i][j - 1] + punctuation.gap {
             al2.push(Some(seq2[j - 1].clone()));
             al1.push(None);
-            backtrack(als, matrix, (al1.clone(), al2.clone()), (i, j - 1), (seq1, seq2), punctuation);
+            backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i, j - 1),
+                (seq1, seq2),
+                punctuation,
+            );
         };
-        if (i > 0 && j > 0) && (matrix[i][j] == matrix[i-1][j-1] + seq1[i - 1].score(&seq2[j - 1], punctuation))
+        if (i > 0 && j > 0)
+            && (matrix[i][j] == matrix[i - 1][j - 1] + seq1[i - 1].score(&seq2[j - 1], punctuation))
         {
             al1.push(Some(seq1[i - 1].clone()));
             al2.push(Some(seq2[j - 1].clone()));
-            backtrack(als, matrix, (al1.clone(), al2.clone()), (i - 1, j - 1), (seq1, seq2), punctuation);
+            backtrack(
+                als,
+                matrix,
+                (al1.clone(), al2.clone()),
+                (i - 1, j - 1),
+                (seq1, seq2),
+                punctuation,
+            );
         };
     }
 
@@ -245,10 +286,16 @@ pub mod needleman_wunsch {
         let j = seq2.len();
         let score = matrix[i][j];
         let mut als = Vec::new();
-        backtrack(&mut als, &matrix, (al1, al2), (i, j), (seq1.as_ref(), seq2.as_ref()), scoring);
+        backtrack(
+            &mut als,
+            &matrix,
+            (al1, al2),
+            (i, j),
+            (seq1.as_ref(), seq2.as_ref()),
+            scoring,
+        );
         (score, als)
     }
-
 
     /// Performs a global alignment of two profiles using Needleman-Wunsch.
     ///
@@ -263,7 +310,11 @@ pub mod needleman_wunsch {
     /// A tuple containing:
     /// - The optimal global alignment score.
     /// - The new profile representing the alignment.
-    pub fn align_profile<T: AsRef<Vec<Profile>>>(prof1: T, prof2: T, scoring: Scoring) -> (f64, Vec<Profile>) {
+    pub fn align_profile<T: AsRef<Vec<Profile>>>(
+        prof1: T,
+        prof2: T,
+        scoring: Scoring,
+    ) -> (f64, Vec<Profile>) {
         let prof1 = prof1.as_ref();
         let prof2 = prof2.as_ref();
         let mut matrix = new_matrix(prof1.len(), prof2.len());
@@ -281,9 +332,9 @@ pub mod needleman_wunsch {
                 result.push(prof2[j - 1].clone());
                 j -= 1;
             } else {
-                result.push(prof1[i-1].add(&prof2[j-1]))
+                result.push(prof1[i - 1].add(&prof2[j - 1]))
             }
-        };
+        }
         result.reverse();
         (score, result)
     }

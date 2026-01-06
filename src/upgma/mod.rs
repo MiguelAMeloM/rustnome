@@ -1,2 +1,2 @@
-mod tree;
 pub mod algorithm;
+mod tree;

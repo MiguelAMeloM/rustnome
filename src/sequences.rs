@@ -1,6 +1,6 @@
-use std::vec::IntoIter;
 use crate::alignment::{Score, Scoring};
 use crate::sequences::profile::Profile;
+use std::vec::IntoIter;
 
 /// A DNA nucleotide.
 ///
@@ -23,7 +23,7 @@ pub enum DNuc {
     /// Thymine, a pyrimidine base that pairs with Adenine.
     T,
     /// Guanine, a purine base that pairs with Cytosine.
-    G
+    G,
 }
 
 impl DNuc {
@@ -32,7 +32,7 @@ impl DNuc {
             DNuc::A => Profile::new(1.0, 0.0, 0.0, 0.0),
             DNuc::C => Profile::new(0.0, 1.0, 0.0, 0.0),
             DNuc::T => Profile::new(0.0, 0.0, 1.0, 0.0),
-            DNuc::G => Profile::new(0.0, 0.0, 0.0, 1.0)
+            DNuc::G => Profile::new(0.0, 0.0, 0.0, 1.0),
         }
     }
 }
@@ -44,7 +44,7 @@ impl From<char> for DNuc {
             'c' | 'C' => DNuc::C,
             't' | 'T' => DNuc::T,
             'g' | 'G' => DNuc::G,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -58,21 +58,21 @@ impl PartialEq for DNuc {
                 } else {
                     false
                 }
-            },
+            }
             &DNuc::C => {
                 if let &DNuc::C = other {
                     true
                 } else {
                     false
                 }
-            },
+            }
             &DNuc::T => {
                 if let &DNuc::T = other {
                     true
                 } else {
                     false
                 }
-            },
+            }
             &DNuc::G => {
                 if let &DNuc::G = other {
                     true
@@ -116,7 +116,7 @@ impl From<&str> for DNA {
         let mut seq = Vec::new();
         for c in s.chars() {
             seq.push(DNuc::from(c));
-        };
+        }
         DNA(seq)
     }
 }
@@ -126,7 +126,7 @@ impl From<String> for DNA {
         let mut seq = Vec::new();
         for c in s.chars() {
             seq.push(DNuc::from(c));
-        };
+        }
         DNA(seq)
     }
 }
@@ -140,46 +140,42 @@ impl IntoIterator for DNA {
     }
 }
 
-
 pub mod profile {
     use crate::alignment::{Score, Scoring};
 
     #[derive(Copy, Clone)]
     pub struct Profile(f64, f64, f64, f64);
-    
-    
+
     impl Profile {
-        
         pub fn new(a: f64, c: f64, t: f64, g: f64) -> Profile {
             Profile(a, c, g, t)
         }
         fn norm(&self) -> f64 {
             (self.0.powi(2) + self.1.powi(2) + self.2.powi(2) + self.3.powi(2)).sqrt()
         }
-        
+
         fn dot(&self, other: &Self) -> f64 {
-            self.0*other.0 + self.1*other.1 + self.2*other.2 + self.3*other.3
+            self.0 * other.0 + self.1 * other.1 + self.2 * other.2 + self.3 * other.3
         }
-        
+
         fn similarity(&self, other: &Self) -> f64 {
             self.dot(other) / self.norm() / other.norm()
         }
-        
+
         pub fn add(&self, other: &Self) -> Self {
             Profile(
-                (self.0 + other.0)/2.0,
-                (self.1 + other.1)/2.0,
-                (self.2 + other.2)/2.0,
-                (self.3 + other.3)/2.0
+                (self.0 + other.0) / 2.0,
+                (self.1 + other.1) / 2.0,
+                (self.2 + other.2) / 2.0,
+                (self.3 + other.3) / 2.0,
             )
         }
     }
-    
+
     impl Score for Profile {
         fn score(&self, other: &Self, scoring: Scoring) -> f64 {
             let s = self.similarity(other);
-            scoring.nuc_mismatch + s*(scoring.nuc_match - scoring.nuc_mismatch)
+            scoring.nuc_mismatch + s * (scoring.nuc_match - scoring.nuc_mismatch)
         }
     }
 }
-

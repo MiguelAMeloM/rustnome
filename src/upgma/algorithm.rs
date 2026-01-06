@@ -1,21 +1,23 @@
-use std::collections::HashMap;
 use crate::alignment::needleman_wunsch::align_profile;
 use crate::alignment::Scoring;
-use crate::sequences::DNuc;
 use crate::sequences::profile::Profile;
+use crate::sequences::DNuc;
 use crate::upgma::tree::TreeNode;
+use std::collections::HashMap;
 
 fn create_profile<T: AsRef<[DNuc]>>(seq: T) -> Vec<Profile> {
     let mut prof = Vec::new();
     for nuc in seq.as_ref() {
         prof.push(nuc.prof());
-    };
+    }
     prof
 }
 
-
-
-fn iter_step(nodes: &mut HashMap<usize, TreeNode>, matrix: &mut HashMap<usize, HashMap<usize, (f64, Vec<Profile>)>>, scoring: Scoring) {
+fn iter_step(
+    nodes: &mut HashMap<usize, TreeNode>,
+    matrix: &mut HashMap<usize, HashMap<usize, (f64, Vec<Profile>)>>,
+    scoring: Scoring,
+) {
     let (mut i, mut j) = (0, 0);
     let mut min_dist = f64::MAX;
     for (a, row) in matrix.iter() {
@@ -81,19 +83,22 @@ pub fn create_tree<T: AsRef<[DNuc]>>(sequences: Vec<(String, T)>, scoring: Scori
     let mut matrix = HashMap::new();
     for i in 0..sequences.len() {
         matrix.insert(i, HashMap::new());
-        for j in i+1..sequences.len() {
+        for j in i + 1..sequences.len() {
             let (_, node1) = sequences.get(i).unwrap();
             let (_, node2) = sequences.get(j).unwrap();
-            matrix.get_mut(&i).unwrap().insert(j, align_profile(create_profile(node1), create_profile(node2), scoring));
+            matrix.get_mut(&i).unwrap().insert(
+                j,
+                align_profile(create_profile(node1), create_profile(node2), scoring),
+            );
         }
     }
     for (i, (name, seq)) in sequences.into_iter().enumerate() {
         let prof = create_profile(seq);
         nodes.insert(i, TreeNode::Leaf(prof, name));
-    };
+    }
     while nodes.len() > 1 {
         iter_step(&mut nodes, &mut matrix, scoring);
-    };
+    }
     let (_, tree) = nodes.drain().next().unwrap();
     tree
 }

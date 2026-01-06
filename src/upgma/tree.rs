@@ -1,13 +1,13 @@
 use crate::sequences::profile::Profile;
 
 pub enum TreeNode {
-    Branch{
+    Branch {
         dist: f64,
         profile: Vec<Profile>,
         left: Box<TreeNode>,
         right: Box<TreeNode>,
     },
-    Leaf(Vec<Profile>, String)
+    Leaf(Vec<Profile>, String),
 }
 
 impl TreeNode {
@@ -16,7 +16,7 @@ impl TreeNode {
             profile: new_prof,
             left: Box::new(self),
             right: Box::new(other),
-            dist
+            dist,
         }
     }
 
